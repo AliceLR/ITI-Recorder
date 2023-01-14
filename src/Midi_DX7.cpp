@@ -57,7 +57,7 @@ public:
   Option<unsigned>  EGLevel2;
   Option<unsigned>  EGLevel3;
   Option<unsigned>  EGLevel4;
-  Option<unsigned>  KSLBreakPoint;    // A0 = 0h, C3 = 27h, C7 = 57h
+  OptionNote        KSLBreakPoint;    // A-1 = 0h, C3 = 27h, C8 = 63h (99)
   Option<unsigned>  KSLLeftDepth;
   Option<unsigned>  KSLRightDepth;
   Enum<KSLCurve>    KSLLeftCurve;     // 0=-linear 1=-exp 2=+exp 3=+linear
@@ -82,7 +82,7 @@ public:
    EGLevel2(options, 99, 0, 99, "EGLevel2"),
    EGLevel3(options, 99, 0, 99, "EGLevel3"),
    EGLevel4(options, 0, 0, 99, "EGLevel4"),
-   KSLBreakPoint(options, 0x27, 0, 0x57, "KSLBreakPoint"),
+   KSLBreakPoint(options, "C3", "A-1", "C8", 0, "KSLBreakPoint"),
    KSLLeftDepth(options, 0, 0, 99, "KSLLeftDepth"),
    KSLRightDepth(options, 0, 0, 99, "KSLRightDepth"),
    KSLLeftCurve(options, "-LIN", "KSLLeftCurve"),

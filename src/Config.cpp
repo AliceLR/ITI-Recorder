@@ -323,7 +323,7 @@ bool ConfigContext::parse_config(int num, const char * const *cfgs)
 
         t = buffer;
         tend = buffer + sizeof(buffer) - 1;
-        while(pos < end && t < tend && (!isspace(*pos) && *pos != ';' && *pos != '#'))
+        while(pos < end && t < tend && (!isspace(*pos) && *pos != ';'))
           *(t++) = *(pos++);
         *t = '\0';
 

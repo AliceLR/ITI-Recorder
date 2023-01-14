@@ -62,6 +62,9 @@ class MIDIInterface : public ConfigInterface
   mutable InputConfig *config = nullptr;
 
 public:
+  static constexpr unsigned A1 = 33;
+  static constexpr unsigned C7 = 96;
+
   Option<unsigned>  device;
 
   MIDIInterface(ConfigContext &_ctx, const char *_tag, int _id):
@@ -95,8 +98,61 @@ public:
   }
 
   static const char *get_note(unsigned note);
+  static int get_note_value(const char *note);
   static uint8_t roland_checksum(const uint8_t *d, size_t sz);
   static bool load_file(std::vector<uint8_t> &out, const char *path);
+};
+
+
+class OptionNote : public ConfigOption
+{
+  unsigned val;
+  unsigned min;
+  unsigned max;
+  int adjust;
+
+public:
+  OptionNote(std::vector<ConfigOption *> &v, const char *def,
+   const char *_min, const char *_max, unsigned min_val, const char *_key):
+   ConfigOption(v, _key)
+  {
+    int a = MIDIInterface::get_note_value(_min);
+    int b = MIDIInterface::get_note_value(_max);
+    int c = MIDIInterface::get_note_value(def);
+
+    if(a < 0 || b < 0 || c < 0 || c < a || c > b)
+      throw "bad note value";
+
+    min = a;
+    max = b;
+    val = c;
+    adjust = min_val - min;
+  }
+
+  virtual bool handle(const char *note)
+  {
+    int v = MIDIInterface::get_note_value(note);
+    if(v < 0 || (unsigned)v < min || (unsigned)v > max)
+      return false;
+
+    val = v;
+    return true;
+  }
+
+  virtual void print()
+  {
+    printf("%s=%s\n", key, MIDIInterface::get_note(val));
+  }
+
+  operator unsigned() const { return val + adjust; }
+  OptionNote &operator=(unsigned v)
+  {
+    v -= adjust;
+    if(v >= min && v <= max)
+      val = v;
+
+    return *this;
+  }
 };
 
 #endif /* MIDI_HPP */

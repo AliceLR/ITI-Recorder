@@ -111,6 +111,47 @@ public:
   }
 };
 
+class OptionBiasPoint : public ConfigOption
+{
+  unsigned val;
+
+public:
+  OptionBiasPoint(std::vector<ConfigOption *> &v, const char *def, const char *_key):
+   ConfigOption(v, _key)
+  {
+    if(!handle(def))
+      throw "bad default string";
+  }
+
+  virtual bool handle(const char *value)
+  {
+    if(value[0] != '<' && value[0] != '>')
+      return false;
+
+    int a = MIDIInterface::get_note_value(value + 1);
+    if((unsigned)a < MIDIInterface::A1 || (unsigned)a > MIDIInterface::C7)
+      return false;
+
+    a -= MIDIInterface::A1;
+    val = (value[0] == '<') ? a : a + 64;
+    return true;
+  }
+
+  virtual void print()
+  {
+    printf("%s=%c%s\n", key, (val < 64 ? '<' : '>'),
+     MIDIInterface::get_note((val & 63) + MIDIInterface::A1));
+  }
+
+  operator unsigned() const { return val; }
+  OptionBiasPoint &operator=(unsigned v)
+  {
+    if(v < 128)
+      val = v;
+    return *this;
+  }
+};
+
 
 class VAPartial : public ConfigSubinterface
 {
@@ -145,7 +186,7 @@ public:
   };
   OptionBool        Mute; // Actually stored in the tone.
 
-  Option<unsigned>  WGPitchCoarse;      // 0-96, 0=C1, 96=C9
+  OptionNote        WGPitchCoarse;      // 0-96, 0=C1, 96=C9
   Option<int>       WGPitchFine;        // -50 to 50 (SysEx: 0-100)
   Enum<Keyfollow>   WGPitchKeyfollow;
   OptionBool        WGPitchBender;
@@ -175,7 +216,7 @@ public:
   Option<unsigned>  TVFCutoff;          // 0-100
   Option<unsigned>  TVFResonance;       // 0-30
   Enum<Keyfollow>   TVFKeyfollow;       // like WGPitchKeyfollow but no s1/s2
-  Option<unsigned>  TVFBiasPoint;       // 0-127 (<A1 to <C7 >A1 to >C7)
+  OptionBiasPoint   TVFBiasPoint;       // 0-127 (<A1 to <C7 >A1 to >C7)
   Option<int>       TVFBiasLevel;       // -7 to 7 (SysEx: 0-14)
 
   Option<unsigned>  TVFEnvDepth;        // 0-100
@@ -194,9 +235,9 @@ public:
 
   Option<unsigned>  TVALevel;           // 0-100
   Option<int>       TVAVelocity;        // -50 to 50 (SysEx: 0-100)
-  Option<unsigned>  TVABiasPoint1;      // see TVFBiasPoint
+  OptionBiasPoint   TVABiasPoint1;      // see TVFBiasPoint
   Option<int>       TVABiasLevel1;      // -12 to 0 (SysEx: 0-12)
-  Option<unsigned>  TVABiasPoint2;
+  OptionBiasPoint   TVABiasPoint2;
   Option<int>       TVABiasLevel2;
 
   Option<unsigned>  TVAEnvTimeKeyfollow;  // 0-4
@@ -215,7 +256,7 @@ public:
    ConfigSubinterface(v, _name),
    /* Options */
    Mute(options, "off", "Mute"),
-   WGPitchCoarse(options, 36, 0, 96, "WGPitchCoarse"),
+   WGPitchCoarse(options, "C4", "C1", "C9", 0, "WGPitchCoarse"),
    WGPitchFine(options, 0, -50, 50, "WGPitchFine"),
    WGPitchKeyfollow(options, "s1", "WGPitchKeyfollow"),
    WGPitchBender(options, true, "WGPitchBender"),
@@ -245,7 +286,7 @@ public:
    TVFCutoff(options, 0, 0, 100, "TVFCutoff"),
    TVFResonance(options, 0, 0, 30, "TVFResonance"),
    TVFKeyfollow(options, "0", "TVFKeyfollow"),
-   TVFBiasPoint(options, 0, 0, 127, "TVFBiasPoint"),
+   TVFBiasPoint(options, "<A1", "TVFBiasPoint"),
    TVFBiasLevel(options, 0, -7, 7, "TVFBiasLevel"),
 
    TVFEnvDepth(options, 0, 0, 100, "TVFEnvDepth"),
@@ -264,9 +305,9 @@ public:
 
    TVALevel(options, 100, 0, 100, "TVALevel"),
    TVAVelocity(options, 50, -50, 50, "TVAVelocity"),
-   TVABiasPoint1(options, 90, 0, 127, "TVABiasPoint1"),
+   TVABiasPoint1(options, ">C4", "TVABiasPoint1"),
    TVABiasLevel1(options, 0, -12, 0, "TVABiasLevel1"),
-   TVABiasPoint2(options, 26, 0, 127, "TVABiasPoint2"),
+   TVABiasPoint2(options, "<C4", "TVABiasPoint2"),
    TVABiasLevel2(options, 0, -12, 0, "TVABiasLevel2"),
 
    TVAEnvTimeKeyfollow(options, 0, 0, 4, "TVAEnvTimeKeyfollow"),
@@ -350,7 +391,7 @@ public:
   OptionString<16>  Name;
   Option<unsigned>  Level;            // 0-100
   Enum<KeyModes>    KeyMode;          // 0=whole 1=dual 2=split
-  Option<unsigned>  SplitPoint;       // 0-61 = C2-C#7
+  OptionNote        SplitPoint;       // 0-61 = C2-C#7
   Option<int>       Balance;          // -50 to 50 (SysEx: 0-100) (0=Lower max, 100=Upper max)
   OptionTone        LowerTone;
   OptionTone        UpperTone;
@@ -374,7 +415,7 @@ public:
    Name(options, "<default>", "Name"),
    Level(options, 100, 0, 100, "Level"),
    KeyMode(options, "whole", "KeyMode"),
-   SplitPoint(options, 24, 0, 61, "SplitPoint"),
+   SplitPoint(options, "C4", "C2", "C#7", 0, "SplitPoint"),
    Balance(options, 0, -50, 50, "Balance"),
    LowerTone(options, "i01", "LowerTone"),
    UpperTone(options, "i01", "UpperTone"),

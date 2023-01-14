@@ -715,7 +715,7 @@ public:
           break;
         case 0x090f:
           addr = 0x0a01;
-          /*  fall-through */
+          /* fall-through */
 
         case 0x0a01: /* Envelope */
           EnvAttack = value(hi, lo);
