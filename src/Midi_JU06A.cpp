@@ -603,7 +603,7 @@ public:
 
       /* Skip messages starting at unmapped memory areas. */
       if(addr < 0x0600 ||
-         (addr >= 0x0606 && addr < 0x0700) ||
+         (addr >= 0x060e && addr < 0x0700) ||
          (addr >= 0x071a && addr < 0x0800) ||
          (addr >= 0x0818 && addr < 0x0900) ||
          (addr >= 0x090e && addr < 0x0a00) ||
