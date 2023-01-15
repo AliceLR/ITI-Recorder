@@ -16,34 +16,16 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "Soundcard.hpp"
+#ifndef PLATFORM_HPP
+#define PLATFORM_HPP
 
-std::vector<std::reference_wrapper<Soundcard>> Soundcard::soundcards;
+#include <stdio.h>
 
-static class DummySoundcard : public Soundcard
+class Platform
 {
 public:
-  DummySoundcard(const char *name): Soundcard(name) {}
+  static void delay(unsigned ms);
+  static void wait_input();
+};
 
-  virtual void deinit()
-  {
-    return;
-  }
-
-  virtual bool init_audio_in(const char *interface)
-  {
-    return false;
-  }
-
-  virtual bool init_midi_out(const char *interface, unsigned num)
-  {
-    return false;
-  }
-
-  virtual void midi_write(const std::vector<uint8_t> &data, int num)
-  {
-    return;
-  }
-} dummy("dummy");
-
-std::reference_wrapper<Soundcard> Soundcard::active(dummy);
+#endif /* PLATFORM_HPP */

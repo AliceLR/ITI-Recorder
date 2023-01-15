@@ -16,34 +16,30 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "Soundcard.hpp"
+#include <errno.h>
+#include <stdio.h>
+#include <time.h>
 
-std::vector<std::reference_wrapper<Soundcard>> Soundcard::soundcards;
+#include "Platform.hpp"
 
-static class DummySoundcard : public Soundcard
+void Platform::delay(unsigned ms)
 {
-public:
-  DummySoundcard(const char *name): Soundcard(name) {}
+  struct timespec req;
+  struct timespec rem;
+  int ret = EINTR;
 
-  virtual void deinit()
+  req.tv_sec = ms / 1000;
+  req.tv_nsec = (ms % 1000) * 1000000;
+
+  while(ret == EINTR)
   {
-    return;
+    ret = nanosleep(&req, &rem);
+    if(ret == EINTR)
+      req = rem;
   }
+}
 
-  virtual bool init_audio_in(const char *interface)
-  {
-    return false;
-  }
-
-  virtual bool init_midi_out(const char *interface, unsigned num)
-  {
-    return false;
-  }
-
-  virtual void midi_write(const std::vector<uint8_t> &data, int num)
-  {
-    return;
-  }
-} dummy("dummy");
-
-std::reference_wrapper<Soundcard> Soundcard::active(dummy);
+void Platform::wait_input()
+{
+  for(int c = 0; c != '\n' && c != EOF; c = fgetc(stdin));
+}

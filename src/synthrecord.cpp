@@ -19,6 +19,7 @@
 #include "Event.hpp"
 #include "Config.hpp"
 #include "Midi.hpp"
+#include "Platform.hpp"
 #include "Soundcard.hpp"
 
 #include <typeinfo>
@@ -35,7 +36,7 @@ static size_t schedule_events(EventSchedule &ev, const GlobalConfig *cfg,
       mi->program(ev);
   }
   else
-    printf("not programming interface(s)\n");
+    fprintf(stderr, "not programming interface(s)\n");
 
   //time_ms += cfg->output_noise_ms; // Noise profile.
 
@@ -70,7 +71,7 @@ static size_t schedule_events(EventSchedule &ev, const GlobalConfig *cfg,
     }
   }
   else
-    printf("not performing playback\n");
+    fprintf(stderr, "not performing playback\n");
 
   return time_ms;
 }
@@ -109,7 +110,7 @@ static Soundcard &initialize_soundcard(const GlobalConfig *cfg,
   }
 
   Soundcard &card = Soundcard::get();
-  printf("using audio interface '%s'\n", card.name);
+  fprintf(stderr, "using audio interface '%s'\n", card.name);
   return card;
 }
 
@@ -153,10 +154,10 @@ int main(int argc, char **argv)
   size_t time_ms = schedule_events(ev, cfg, midi_interfaces);
 
   /* Confirm MIDI devices and manual synthesizer configuration. */
-  printf("Start note:   %s\n", MIDIInterface::get_note(cfg->min_note));
-  printf("End note:     %s\n", MIDIInterface::get_note(cfg->max_note));
-  printf("Duration:     %.2fs\n", time_ms / 1000.0);
-  printf("\n");
+  fprintf(stderr, "Start note:   %s\n", MIDIInterface::get_note(cfg->min_note));
+  fprintf(stderr, "End note:     %s\n", MIDIInterface::get_note(cfg->max_note));
+  fprintf(stderr, "Duration:     %.2fs\n", time_ms / 1000.0);
+  fprintf(stderr, "\n");
 
   for(unsigned i = 0; i < midi_interfaces.size(); i++)
   {
@@ -165,10 +166,10 @@ int main(int argc, char **argv)
     const char *device = ic ? ic->midi_device : "?";
     unsigned channel = ic ? ic->midi_channel : 0;
 
-    printf("Interface %2u: '%s' on port '%s' channel %u\n",
+    fprintf(stderr, "Interface %2u: '%s' on port '%s' channel %u\n",
      i, mi->tag, device, channel);
   }
-  printf("\n");
+  fprintf(stderr, "\n");
 
   // FIXME: these should print literally anything about their interface
   while(ev.has_next())
@@ -179,7 +180,8 @@ int main(int argc, char **argv)
     std::shared_ptr<Event> notice = ev.pop();
     notice->task();
   }
-  // FIXME: wait for user confirmation.
+  fprintf(stderr, "Press 'enter' to continue.\n");
+  Platform::wait_input();
 
   if(cfg->output_on)
   {
@@ -196,7 +198,7 @@ int main(int argc, char **argv)
   {
     int ms = ev.next_time() - ev.previous_time();
     if(ms > 0)
-      card.delay(ms);
+      Platform::delay(ms);
 
     std::shared_ptr<Event> event = ev.pop();
     event->task();

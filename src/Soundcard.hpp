@@ -40,7 +40,6 @@ public:
   virtual bool init_midi_out(const char *interface, unsigned num) = 0;
 
   virtual void midi_write(const std::vector<uint8_t> &data, int num) = 0;
-  virtual void delay(unsigned ms) = 0;
 
   void select()
   {

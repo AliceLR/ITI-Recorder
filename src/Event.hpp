@@ -121,7 +121,7 @@ public:
 
   virtual void task() const
   {
-    printf("%s\n", message.data());
+    fprintf(stderr, "%s\n", message.data());
   }
 
   static void schedule(EventSchedule &ev, const char *_message)

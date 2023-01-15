@@ -33,6 +33,7 @@ soundcard_objs := \
 
 synthrecord_objs := \
 	${obj}/synthrecord.o \
+	${obj}/Platform.o \
 	${midi_objs} \
 	${soundcard_objs} \
 

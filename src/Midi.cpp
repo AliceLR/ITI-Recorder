@@ -31,11 +31,11 @@ void MIDIEvent::task() const
   //*
   for(uint8_t d : data)
   {
-    printf("%02x ", d);
+    fprintf(stderr, "%02x ", d);
     if(d == 0xf7)
-      printf("\n");
+      fprintf(stderr, "\n");
   }
-  printf("\n");
+  fprintf(stderr, "\n");
   //*/
   Soundcard::get().midi_write(data, interface.device);
 }
