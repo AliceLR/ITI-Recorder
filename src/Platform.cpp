@@ -26,16 +26,16 @@ void Platform::delay(unsigned ms)
 {
   struct timespec req;
   struct timespec rem;
-  int ret = EINTR;
 
   req.tv_sec = ms / 1000;
   req.tv_nsec = (ms % 1000) * 1000000;
 
-  while(ret == EINTR)
+  while(nanosleep(&req, &rem))
   {
-    ret = nanosleep(&req, &rem);
-    if(ret == EINTR)
-      req = rem;
+    if(errno != EINTR)
+      return;
+
+    req = rem;
   }
 }
 
