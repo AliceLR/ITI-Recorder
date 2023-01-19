@@ -23,7 +23,7 @@ std::vector<std::reference_wrapper<Soundcard>> Soundcard::soundcards;
 static class DummySoundcard : public Soundcard
 {
 public:
-  DummySoundcard(const char *name): Soundcard(name) {}
+  DummySoundcard(const char *name): Soundcard(name, false) {}
 
   virtual void deinit()
   {
@@ -32,12 +32,22 @@ public:
 
   virtual bool init_audio_in(const char *interface)
   {
-    return false;
+    return true;
+  }
+
+  virtual bool audio_capture_start(AudioInput &dest)
+  {
+    return true;
+  }
+
+  virtual bool audio_capture_stop()
+  {
+    return true;
   }
 
   virtual bool init_midi_out(const char *interface, unsigned num)
   {
-    return false;
+    return true;
   }
 
   virtual void midi_write(const std::vector<uint8_t> &data, int num)

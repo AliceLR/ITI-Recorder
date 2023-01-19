@@ -19,7 +19,11 @@
 #ifndef PLATFORM_HPP
 #define PLATFORM_HPP
 
-#include <stdio.h>
+template<class T>
+static inline constexpr T cast_multiply(T a, T b)
+{
+  return a * b;
+}
 
 class Platform
 {

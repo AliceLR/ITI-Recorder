@@ -49,6 +49,7 @@ class EventSchedule
 {
   static constexpr int START_TIME = -3;
   int prev_time_ms = START_TIME;
+  int max_time_ms = 0;
 
   std::priority_queue<
     std::shared_ptr<Event>,
@@ -63,12 +64,14 @@ public:
 
   void push(const std::shared_ptr<Event> &e)
   {
+    max_time_ms = std::max(max_time_ms, e->time_ms);
     queue.push(e);
     dont_free.push_back(e);
   }
 
   void push(std::shared_ptr<Event> &&e)
   {
+    max_time_ms = std::max(max_time_ms, e->time_ms);
     dont_free.push_back(e);
     queue.push(std::move(e));
   }
@@ -101,6 +104,16 @@ public:
   int next_time() const
   {
     return peek()->time_ms;
+  }
+
+  int remaining_duration() const
+  {
+    return max_time_ms - prev_time_ms;
+  }
+
+  int total_duration() const
+  {
+    return max_time_ms;
   }
 };
 

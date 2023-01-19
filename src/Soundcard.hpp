@@ -19,31 +19,53 @@
 #ifndef SOUNDCARD_HPP
 #define SOUNDCARD_HPP
 
+#include <stdint.h>
 #include <string.h>
 #include <functional>
-#include <memory>
 #include <vector>
+
+class AudioInput; /* AudioBuffer.hpp */
 
 class Soundcard
 {
   static std::vector<std::reference_wrapper<Soundcard>> soundcards;
   static std::reference_wrapper<Soundcard> active;
 
+protected:
+  unsigned in_channels = 0;
+  unsigned in_rate = 0;
+
 public:
   const char * const name;
 
-  Soundcard(const char *_name): name(_name) { soundcards.push_back(*this); }
+  Soundcard(const char *_name, bool searchable = true): name(_name)
+  {
+    if(searchable)
+      soundcards.push_back(*this);
+  }
 
   virtual void deinit() = 0;
 
-  virtual bool init_audio_in(const char *interface) = 0; // FIXME: callback
-  virtual bool init_midi_out(const char *interface, unsigned num) = 0;
+  virtual bool init_audio_in(const char *interface) = 0;
+  virtual bool audio_capture_start(AudioInput &dest) = 0;
+  virtual bool audio_capture_stop() = 0;
 
+  virtual bool init_midi_out(const char *interface, unsigned num) = 0;
   virtual void midi_write(const std::vector<uint8_t> &data, int num) = 0;
 
   void select()
   {
     active = *this;
+  }
+
+  unsigned channels() const
+  {
+    return in_channels;
+  }
+
+  unsigned rate() const
+  {
+    return in_rate;
   }
 
   static const std::vector<std::reference_wrapper<Soundcard>> &list()
