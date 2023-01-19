@@ -258,3 +258,15 @@ public:
   }
 } midi("MIDIInterface");
 */
+
+class PlaybackRegister : public ConfigRegister
+{
+public:
+  PlaybackRegister(const char *_tag): ConfigRegister(_tag) {}
+
+  std::shared_ptr<ConfigInterface> generate(ConfigContext &ctx,
+   const char *tag, int id) const
+  {
+    return std::shared_ptr<ConfigInterface>(new PlaybackConfig(ctx, tag, id));
+  }
+} reg_playback("Playback");

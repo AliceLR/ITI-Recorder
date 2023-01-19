@@ -340,6 +340,13 @@ public:
     return interfaces;
   }
 
+  template<class T>
+  std::shared_ptr<T> get_interface_as(const char *tag, int id = 1)
+  {
+    std::shared_ptr<ConfigInterface> a = get_interface(tag, id);
+    return std::dynamic_pointer_cast<T>(a);
+  }
+
   bool parse_config_file(const char *filename);
   bool parse_config(int num, const char * const *cfgs);
   bool parse_config(const char *cfg)
@@ -373,14 +380,6 @@ public:
 
   /* Patch playback configuration. */
   OptionBool        program_on;
-  OptionBool        playback_on;
-  Option<unsigned>  on_ms;
-  Option<unsigned>  off_ms;
-  Option<unsigned>  quiet_ms;
-  Option<unsigned>  min_note;
-  Option<unsigned>  max_note;
-  Option<unsigned>  on_velocity;
-  Option<unsigned>  off_velocity;
 
   GlobalConfig(ConfigContext &_ctx, const char *_tag, int _id):
    ConfigInterface(_ctx, _tag, _id),
@@ -395,15 +394,7 @@ public:
    output_wav(options, true, "OutputWAV"),
    output_sam(options, false, "OutputSAM"),
    output_iti(options, true, "OutputITI"),
-   program_on(options, true, "Program"),
-   playback_on(options, true, "Playback"),
-   on_ms(options, 1000, 0, UINT_MAX, "MIDI_on_ms"),
-   off_ms(options, 1000, 0, UINT_MAX, "MIDI_off_ms"),
-   quiet_ms(options, 100, 0, UINT_MAX, "MIDI_quiet_ms"),
-   min_note(options, 24, 0, 127, "MIDI_min_note"),
-   max_note(options, 96, 0, 127, "MIDI_max_note"),
-   on_velocity(options, 127, 0, 127, "MIDI_on_velocity"),
-   off_velocity(options, 64, 0, 127, "MIDI_off_velocity")
+   program_on(options, true, "Program")
   {}
 
   virtual ~GlobalConfig() {}

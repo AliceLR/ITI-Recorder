@@ -27,7 +27,9 @@
 #include <typeinfo>
 
 /* FIXME: schedule audio recording, noise profile events. */
-static size_t schedule_events(EventSchedule &ev, const GlobalConfig *cfg,
+static size_t schedule_events(EventSchedule &ev,
+ const std::shared_ptr<GlobalConfig> &cfg,
+ const std::shared_ptr<PlaybackConfig> &play,
  const std::vector<const MIDIInterface *> &midi_interfaces)
 {
   size_t time_ms = 0;
@@ -42,26 +44,26 @@ static size_t schedule_events(EventSchedule &ev, const GlobalConfig *cfg,
 
   //time_ms += cfg->output_noise_ms; // Noise profile.
 
-  if(cfg->playback_on)
+  if(play->PlaybackOn)
   {
     std::vector<uint8_t> out;
-    for(unsigned i = cfg->min_note; i <= cfg->max_note; i++)
+    for(unsigned i = play->MinNote; i <= play->MaxNote; i++)
     {
       for(const MIDIInterface *mi : midi_interfaces)
       {
         out.resize(0);
-        mi->note_on(out, i, cfg->on_velocity);
+        mi->note_on(out, i, play->OnVelocity);
         MIDIEvent::schedule(ev, *mi, out, time_ms);
       }
-      time_ms += cfg->on_ms;
+      time_ms += play->On_ms;
 
       for(const MIDIInterface *mi : midi_interfaces)
       {
         out.resize(0);
-        mi->note_off(out, i, cfg->off_velocity);
+        mi->note_off(out, i, play->OffVelocity);
         MIDIEvent::schedule(ev, *mi, out, time_ms);
       }
-      time_ms += cfg->off_ms;
+      time_ms += play->Off_ms;
 
       for(const MIDIInterface *mi : midi_interfaces)
       {
@@ -69,7 +71,7 @@ static size_t schedule_events(EventSchedule &ev, const GlobalConfig *cfg,
         mi->all_off(out);
         MIDIEvent::schedule(ev, *mi, out, time_ms);
       }
-      time_ms += cfg->quiet_ms;
+      time_ms += play->Quiet_ms;
     }
   }
   else
@@ -78,7 +80,9 @@ static size_t schedule_events(EventSchedule &ev, const GlobalConfig *cfg,
   return time_ms;
 }
 
-static bool try_init(Soundcard &card, const GlobalConfig *cfg,
+static bool try_init(Soundcard &card,
+ const std::shared_ptr<GlobalConfig> &cfg,
+ const std::shared_ptr<PlaybackConfig> &play,
  const std::vector<const MIDIInterface *> &midi_interfaces)
 {
   if(cfg->output_on)
@@ -91,7 +95,7 @@ static bool try_init(Soundcard &card, const GlobalConfig *cfg,
     }
   }
 
-  if(cfg->program_on || cfg->playback_on)
+  if(cfg->program_on || play->PlaybackOn)
   {
     for(const MIDIInterface *mi : midi_interfaces)
     {
@@ -108,20 +112,22 @@ static bool try_init(Soundcard &card, const GlobalConfig *cfg,
   return true;
 }
 
-static Soundcard &initialize_soundcard(const GlobalConfig *cfg,
+static Soundcard &initialize_soundcard(
+ const std::shared_ptr<GlobalConfig> &cfg,
+ const std::shared_ptr<PlaybackConfig> &play,
  const std::vector<const MIDIInterface *> &midi_interfaces)
 {
   bool has_card = false;
   if(strcasecmp("default", cfg->audio_driver))
   {
-    if(try_init(Soundcard::get(cfg->audio_driver), cfg, midi_interfaces))
+    if(try_init(Soundcard::get(cfg->audio_driver), cfg, play, midi_interfaces))
       has_card = true;
   }
   else
 
   for(Soundcard &card : Soundcard::list())
   {
-    if(try_init(card, cfg, midi_interfaces))
+    if(try_init(card, cfg, play, midi_interfaces))
     {
       has_card = true;
       break;
@@ -147,13 +153,13 @@ int main(int argc, char **argv)
   if(!ctx.init(argc, argv))
     return 1;
 
-  std::shared_ptr<ConfigInterface> _cfg = ctx.get_interface("global");
-  if(_cfg == nullptr)
+  const auto cfg = ctx.get_interface_as<GlobalConfig>("global");
+  const auto play = ctx.get_interface_as<PlaybackConfig>("Playback");
+
+  if(cfg == nullptr || play == nullptr)
     return 1;
 
   std::vector<const MIDIInterface *> midi_interfaces;
-
-  const GlobalConfig *cfg = reinterpret_cast<GlobalConfig *>(_cfg.get());
 
   /* Get all MIDI synths. */
   for(auto &p : ctx.get_interfaces())
@@ -178,7 +184,7 @@ int main(int argc, char **argv)
   EventSchedule ev;
   AudioBuffer<int16_t> buffer(2, cfg->audio_rate);
 
-  size_t time_ms = schedule_events(ev, cfg, midi_interfaces);
+  size_t time_ms = schedule_events(ev, cfg, play, midi_interfaces);
   uint64_t buffer_frames =
    cast_multiply<uint64_t>(cfg->audio_rate, ev.total_duration() + 30000) / 1000;
 
@@ -190,8 +196,8 @@ int main(int argc, char **argv)
   }
 
   /* Confirm MIDI devices and manual synthesizer configuration. */
-  fprintf(stderr, "Start note:   %s\n", MIDIInterface::get_note(cfg->min_note));
-  fprintf(stderr, "End note:     %s\n", MIDIInterface::get_note(cfg->max_note));
+  fprintf(stderr, "Start note:   %s\n", MIDIInterface::get_note(play->MinNote));
+  fprintf(stderr, "End note:     %s\n", MIDIInterface::get_note(play->MaxNote));
   fprintf(stderr, "Duration:     %.2fs\n", time_ms / 1000.0);
   fprintf(stderr, "Buffer frames:%zu\n", buffer_frames);
   fprintf(stderr, "\n");
@@ -225,7 +231,7 @@ int main(int argc, char **argv)
     buffer.resize(buffer_frames);
 
   /* Initialize sound device. */
-  Soundcard &card = initialize_soundcard(cfg, midi_interfaces);
+  Soundcard &card = initialize_soundcard(cfg, play, midi_interfaces);
 
   // FIXME: signal handler to send all off event on abort.
 
