@@ -170,9 +170,9 @@ public:
   PlaybackConfig(ConfigContext &_ctx, const char *_tag, int _id):
    ConfigInterface(_ctx, _tag, _id),
    PlaybackOn(options, true, "Playback"),
-   On_ms(options, 1000, 0, UINT_MAX, "On_ms"),
-   Off_ms(options, 1000, 0, UINT_MAX, "Off_ms"),
-   Quiet_ms(options, 100, 0, UINT_MAX, "Quiet_ms"),
+   On_ms(options, 1000, 10, UINT_MAX, "On_ms"),
+   Off_ms(options, 1000, 10, UINT_MAX, "Off_ms"),
+   Quiet_ms(options, 100, 10, UINT_MAX, "Quiet_ms"),
    OnVelocity(options, 127, 0, 127, "OnVelocity"),
    OffVelocity(options, 64, 0, 127, "OffVelocity"),
    MinNote(options, "C1", "C-1", "G9", 0, "MinNote"),

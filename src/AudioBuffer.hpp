@@ -25,6 +25,14 @@
 #include <type_traits>
 #include <vector>
 
+#include "Event.hpp"
+
+struct AudioCue
+{
+  uint64_t frame;
+  bool on;
+};
+
 class AudioInput
 {
 public:
@@ -41,7 +49,9 @@ template<class T, class U=typename std::enable_if<std::is_integral<T>::value>::t
 class AudioBuffer : public AudioInput
 {
   std::vector<T> samples;
+  std::vector<AudioCue> cues;
   size_t frames_left = 0;
+  size_t frame = 0;
   size_t idx = 0;
 
 public:
@@ -60,6 +70,8 @@ public:
     if(new_size < samples.size())
     {
       frames_left = 0;
+      frame = new_frames;
+      idx = new_size;
     }
     else
       frames_left = new_size - samples.size();
@@ -74,10 +86,21 @@ public:
     {
       memcpy(&(samples[idx]), frames_i, num_frames_i * frame_size());
       idx += num_frames_i * channels;
+      frame += num_frames_i;
       frames_left -= num_frames_i;
       return true;
     }
     return false;
+  }
+
+  void reserve_cues(unsigned n)
+  {
+    cues.reserve(n);
+  }
+
+  void cue(bool on)
+  {
+    cues.push_back({ frame, on });
   }
 
   size_t frame_size() const
@@ -93,6 +116,39 @@ public:
   const std::vector<T> &get_samples() const
   {
     return samples;
+  }
+
+  const std::vector<AudioCue> &get_cues() const
+  {
+    return cues;
+  }
+};
+
+
+class AudioCueEvent
+{
+  template<class T>
+  class _AudioCueEvent : public Event
+  {
+    AudioBuffer<T> &buffer;
+    bool on;
+
+  public:
+    _AudioCueEvent(AudioBuffer<T> &_buffer, bool _on, int _time_ms):
+    Event(_time_ms), buffer(_buffer), on(_on) {}
+
+    virtual void task() const
+    {
+      fprintf(stderr, "cue: %s\n", on?"on":"off");
+      buffer.cue(on);
+    }
+  };
+
+public:
+  template<class T>
+  static void schedule(EventSchedule &ev, AudioBuffer<T> &_buffer, bool _on, int _time_ms)
+  {
+    ev.push(std::make_shared<_AudioCueEvent<T>>(_buffer, _on, _time_ms));
   }
 };
 

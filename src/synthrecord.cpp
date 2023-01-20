@@ -30,8 +30,11 @@
 static size_t schedule_events(EventSchedule &ev,
  const std::shared_ptr<GlobalConfig> &cfg,
  const std::shared_ptr<PlaybackConfig> &play,
- const std::vector<const MIDIInterface *> &midi_interfaces)
+ const std::vector<const MIDIInterface *> &midi_interfaces,
+ AudioBuffer<int16_t> &buffer)
 {
+  bool add_cues = cfg->output_on;
+  unsigned cues = 0;
   size_t time_ms = 0;
 
   if(cfg->program_on)
@@ -49,6 +52,13 @@ static size_t schedule_events(EventSchedule &ev,
     std::vector<uint8_t> out;
     for(unsigned i = play->MinNote; i <= play->MaxNote; i++)
     {
+      /* On cue */
+      if(add_cues)
+      {
+        AudioCueEvent::schedule(ev, buffer, true, time_ms);
+        cues++;
+      }
+
       for(const MIDIInterface *mi : midi_interfaces)
       {
         out.resize(0);
@@ -72,7 +82,15 @@ static size_t schedule_events(EventSchedule &ev,
         MIDIEvent::schedule(ev, *mi, out, time_ms);
       }
       time_ms += play->Quiet_ms;
+
+      /* Off cue */
+      if(add_cues)
+      {
+        AudioCueEvent::schedule(ev, buffer, false, time_ms - 10);
+        cues++;
+      }
     }
+    buffer.reserve_cues(cues);
   }
   else
     fprintf(stderr, "not performing playback\n");
@@ -184,7 +202,7 @@ int main(int argc, char **argv)
   EventSchedule ev;
   AudioBuffer<int16_t> buffer(2, cfg->audio_rate);
 
-  size_t time_ms = schedule_events(ev, cfg, play, midi_interfaces);
+  size_t time_ms = schedule_events(ev, cfg, play, midi_interfaces, buffer);
   uint64_t buffer_frames =
    cast_multiply<uint64_t>(cfg->audio_rate, ev.total_duration() + 30000) / 1000;
 
@@ -259,6 +277,9 @@ int main(int argc, char **argv)
   {
     card.audio_capture_stop();
     fprintf(stderr, "total frames read: %zu\n", buffer.total_in());
+
+    for(const AudioCue &c : buffer.get_cues())
+      fprintf(stderr, "%10" PRIu64 " : cue %s\n", c.frame, c.on ? "on" : "off");
 
     // FIXME: dump raw only when requested
     FILE *f = fopen("out.raw", "wb");
