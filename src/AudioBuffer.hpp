@@ -29,7 +29,7 @@
 
 struct AudioCue
 {
-  uint64_t frame;
+  size_t frame;
   bool on;
 };
 
@@ -53,6 +53,11 @@ class AudioBuffer : public AudioInput
   size_t frames_left = 0;
   size_t frame = 0;
   size_t idx = 0;
+
+  static constexpr size_t abs(ssize_t v)
+  {
+    return (v > 0) ? v : -v;
+  }
 
 public:
   AudioBuffer(unsigned c, unsigned r): AudioInput(c, r)
@@ -93,6 +98,45 @@ public:
     return false;
   }
 
+  void shrink_cues(size_t threshold)
+  {
+    for(size_t i = 0; i < cues.size(); i++)
+    {
+      size_t pos = cues[i].frame * channels;
+      if(pos > samples.size())
+        continue;
+
+      if(cues[i].on)
+      {
+        size_t bound = frame;
+        if(i + 1 < cues.size())
+          bound = std::min(bound, cues[i + 1].frame);
+
+        bound *= channels;
+        for(; pos < bound; pos += channels)
+          for(size_t smp = 0; smp < channels; smp++)
+            if(abs(samples[pos + smp]) >= threshold)
+              goto stop_on;
+      stop_on:
+        cues[i].frame = pos / channels;
+      }
+      else
+      {
+        size_t bound = 0;
+        if(i > 0)
+          bound = std::max(bound, cues[i - 1].frame);
+
+        bound *= channels;
+        for(; pos > bound; pos -= channels)
+          for(ssize_t smp = -(ssize_t)channels; smp < 0; smp++)
+            if(abs(samples[pos + smp]) >= threshold)
+              goto stop_off;
+      stop_off:
+        cues[i].frame = pos / channels;
+      }
+    }
+  }
+
   void reserve_cues(unsigned n)
   {
     cues.reserve(n);
@@ -108,9 +152,9 @@ public:
     return channels * sizeof(T);
   }
 
-  size_t total_in() const
+  size_t total_frames() const
   {
-    return idx / channels;
+    return frame;
   }
 
   const std::vector<T> &get_samples() const

@@ -371,7 +371,9 @@ public:
   OptionRate        audio_rate;
   OptionBool        output_on;
   OptionBool        output_noise_removal;
+  Option<unsigned>  output_noise_threshold;
   Option<unsigned>  output_noise_ms;
+  OptionBool        output_debug;
   OptionBool        output_dump;
   OptionBool        output_flac;
   OptionBool        output_wav;
@@ -388,7 +390,9 @@ public:
    audio_rate(options, 96000, "AudioRate"),
    output_on(options, true, "Output"),
    output_noise_removal(options, true, "OutputNoiseRemoval"),
+   output_noise_threshold(options, 5, 0, INT16_MAX, "OutputNoiseThreshold"),
    output_noise_ms(options, 30*1000, 0, UINT_MAX, "OutputNoiseMS"),
+   output_debug(options, false, "OutputDebugFiles"),
    output_dump(options, false, "OutputDump"),
    output_flac(options, false, "OutputFLAC"),
    output_wav(options, true, "OutputWAV"),

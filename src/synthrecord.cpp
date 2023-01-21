@@ -17,6 +17,7 @@
  */
 
 #include "AudioBuffer.hpp"
+#include "AudioOutput.hpp"
 #include "Event.hpp"
 #include "Config.hpp"
 #include "Midi.hpp"
@@ -276,21 +277,24 @@ int main(int argc, char **argv)
   if(cfg->output_on)
   {
     card.audio_capture_stop();
-    fprintf(stderr, "total frames read: %zu\n", buffer.total_in());
+    fprintf(stderr, "total frames read: %zu\n", buffer.total_frames());
 
     for(const AudioCue &c : buffer.get_cues())
       fprintf(stderr, "%10" PRIu64 " : cue %s\n", c.frame, c.on ? "on" : "off");
 
-    // FIXME: dump raw only when requested
-    FILE *f = fopen("out.raw", "wb");
-    if(f)
-    {
-      fwrite(buffer.get_samples().data(), buffer.frame_size(), buffer.total_in(), f);
-      fclose(f);
-    }
+    // FIXME: amplify and noise removal
 
-    // FIXME: clean, slice, and output audio
-    // FIXME: might be useful with playback off just to capture a noise sample
+    /* Remove silence from individual samples. */
+    buffer.shrink_cues(cfg->output_noise_threshold);
+    fprintf(stderr, "\ncues after processing:\n");
+    for(const AudioCue &c : buffer.get_cues())
+      fprintf(stderr, "%10" PRIu64 " : cue %s\n", c.frame, c.on ? "on" : "off");
+
+    /* Output audio */
+    if(cfg->output_debug)
+      AudioOutput<Audio::RAW>::write(buffer, "out.raw");
+
+    // FIXME: output audio
   }
 
   return 0;

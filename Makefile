@@ -28,6 +28,10 @@ midi_objs := \
 	${obj}/Midi_PSR36.o \
 	${obj}/Soundcard.o \
 
+output_objs := \
+	${obj}/AudioOutput.o \
+	${obj}/AudioOutput_Raw.o \
+
 soundcard_objs := \
 	${obj}/Soundcard_ALSA.o \
 
@@ -35,6 +39,7 @@ synthrecord_objs := \
 	${obj}/synthrecord.o \
 	${obj}/Platform.o \
 	${midi_objs} \
+	${output_objs} \
 	${soundcard_objs} \
 
 test_objs := \
