@@ -46,7 +46,12 @@ static size_t schedule_events(EventSchedule &ev,
   else
     fprintf(stderr, "not programming interface(s)\n");
 
-  //time_ms += cfg->output_noise_ms; // Noise profile.
+  if(cfg->output_noise_removal)
+  {
+    AudioCueEvent::schedule(ev, buffer, AudioCue::NoiseStart, time_ms);
+    time_ms += cfg->output_noise_ms;
+    AudioCueEvent::schedule(ev, buffer, AudioCue::NoiseEnd, time_ms - 1);
+  }
 
   if(play->PlaybackOn)
   {
@@ -56,7 +61,7 @@ static size_t schedule_events(EventSchedule &ev,
       /* On cue */
       if(add_cues)
       {
-        AudioCueEvent::schedule(ev, buffer, true, time_ms);
+        AudioCueEvent::schedule(ev, buffer, AudioCue::On, time_ms);
         cues++;
       }
 
@@ -87,7 +92,7 @@ static size_t schedule_events(EventSchedule &ev,
       /* Off cue */
       if(add_cues)
       {
-        AudioCueEvent::schedule(ev, buffer, false, time_ms - 10);
+        AudioCueEvent::schedule(ev, buffer, AudioCue::Off, time_ms - 10);
         cues++;
       }
     }
@@ -280,7 +285,8 @@ int main(int argc, char **argv)
     fprintf(stderr, "total frames read: %zu\n", buffer.total_frames());
 
     for(const AudioCue &c : buffer.get_cues())
-      fprintf(stderr, "%10" PRIu64 " : cue %s\n", c.frame, c.on ? "on" : "off");
+      fprintf(stderr, "%10" PRIu64 " : cue %s\n", c.frame,
+       AudioCue::type_str(c.type));
 
     // FIXME: amplify and noise removal
 
@@ -288,7 +294,8 @@ int main(int argc, char **argv)
     buffer.shrink_cues(cfg->output_noise_threshold);
     fprintf(stderr, "\ncues after processing:\n");
     for(const AudioCue &c : buffer.get_cues())
-      fprintf(stderr, "%10" PRIu64 " : cue %s\n", c.frame, c.on ? "on" : "off");
+      fprintf(stderr, "%10" PRIu64 " : cue %s\n", c.frame,
+       AudioCue::type_str(c.type));
 
     /* Output audio */
     if(cfg->output_debug)

@@ -391,7 +391,7 @@ public:
    output_on(options, true, "Output"),
    output_noise_removal(options, true, "OutputNoiseRemoval"),
    output_noise_threshold(options, 5, 0, INT16_MAX, "OutputNoiseThreshold"),
-   output_noise_ms(options, 30*1000, 0, UINT_MAX, "OutputNoiseMS"),
+   output_noise_ms(options, 30*1000, 1000, UINT_MAX, "OutputNoiseMS"),
    output_debug(options, false, "OutputDebugFiles"),
    output_dump(options, false, "OutputDump"),
    output_flac(options, false, "OutputFLAC"),

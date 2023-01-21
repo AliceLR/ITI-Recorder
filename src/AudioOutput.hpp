@@ -66,8 +66,8 @@ public:
   template<class T>
   static bool write(const AudioBuffer<T> &buffer, const char *filename)
   {
-    AudioCue start{ 0, true };
-    AudioCue end{ buffer.frames(), false };
+    AudioCue start{ 0, AudioCue::On };
+    AudioCue end{ buffer.frames(), AudioCue::Off };
     return write(buffer, start, end, filename);
   }
 
@@ -84,7 +84,7 @@ public:
 
     for(size_t i = 1; i < cues.size(); i++)
     {
-      if(cues[i - 1].on && !cues[i].on)
+      if(cues[i - 1].type == AudioCue::On && cues[i].type == AudioCue::Off)
       {
         const char *note = MIDIInterface::get_note(next++);
         snprintf(name, sizeof(name), "%*.*s.%s%s",

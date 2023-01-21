@@ -29,8 +29,28 @@
 
 struct AudioCue
 {
+  enum Type
+  {
+    On,
+    Off,
+    NoiseStart,
+    NoiseEnd
+  };
+
   size_t frame;
-  bool on;
+  Type type;
+
+  static constexpr const char *type_str(Type t)
+  {
+    switch(t)
+    {
+    case On: return "On";
+    case Off: return "Off";
+    case NoiseStart: return "NoiseStart";
+    case NoiseEnd: return "NoiseEnd";
+    }
+    return "?";
+  }
 };
 
 class AudioInput
@@ -106,7 +126,7 @@ public:
       if(pos > samples.size())
         continue;
 
-      if(cues[i].on)
+      if(cues[i].type == AudioCue::On)
       {
         size_t bound = frame;
         if(i + 1 < cues.size())
@@ -121,6 +141,8 @@ public:
         cues[i].frame = pos / channels;
       }
       else
+
+      if(cues[i].type == AudioCue::Off)
       {
         size_t bound = 0;
         if(i > 0)
@@ -142,9 +164,9 @@ public:
     cues.reserve(n);
   }
 
-  void cue(bool on)
+  void cue(AudioCue::Type type)
   {
-    cues.push_back({ frame, on });
+    cues.push_back({ frame, type });
   }
 
   size_t frame_size() const
@@ -175,24 +197,25 @@ class AudioCueEvent
   class _AudioCueEvent : public Event
   {
     AudioBuffer<T> &buffer;
-    bool on;
+    AudioCue::Type type;
 
   public:
-    _AudioCueEvent(AudioBuffer<T> &_buffer, bool _on, int _time_ms):
-    Event(_time_ms), buffer(_buffer), on(_on) {}
+    _AudioCueEvent(AudioBuffer<T> &_buffer, AudioCue::Type _type, int _time_ms):
+    Event(_time_ms), buffer(_buffer), type(_type) {}
 
     virtual void task() const
     {
-      fprintf(stderr, "cue: %s\n", on?"on":"off");
-      buffer.cue(on);
+      fprintf(stderr, "cue: %s\n", AudioCue::type_str(type));
+      buffer.cue(type);
     }
   };
 
 public:
   template<class T>
-  static void schedule(EventSchedule &ev, AudioBuffer<T> &_buffer, bool _on, int _time_ms)
+  static void schedule(EventSchedule &ev, AudioBuffer<T> &_buffer,
+   AudioCue::Type _type, int _time_ms)
   {
-    ev.push(std::make_shared<_AudioCueEvent<T>>(_buffer, _on, _time_ms));
+    ev.push(std::make_shared<_AudioCueEvent<T>>(_buffer, _type, _time_ms));
   }
 };
 
