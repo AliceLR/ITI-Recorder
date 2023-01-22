@@ -78,8 +78,9 @@ public:
     char name[512];
 
     const std::vector<AudioCue> &cues = buffer.get_cues();
-    const char *pos = strrchr(filename, '.');
+    const char *pos = strrchr(filename, '%');
     int offset = pos ? pos - filename : strlen(filename);
+    int offset2 = pos ? offset + 1 : offset;
     unsigned next = first;
 
     for(size_t i = 1; i < cues.size(); i++)
@@ -87,8 +88,8 @@ public:
       if(cues[i - 1].type == AudioCue::On && cues[i].type == AudioCue::Off)
       {
         const char *note = MIDIInterface::get_note(next++);
-        snprintf(name, sizeof(name), "%*.*s.%s%s",
-         offset, offset, filename, note, filename + offset);
+        snprintf(name, sizeof(name), "%*.*s%s%s",
+         offset, offset, filename, note, filename + offset2);
 
         if(!write(buffer, cues[i - 1], cues[i], name))
           return false;
@@ -107,5 +108,8 @@ template<> template<>
 bool AudioOutput<Audio::RAW>::write<int16_t>(const AudioBuffer<int16_t> &buffer,
  const char *filename);
 
+template<> template<>
+bool AudioOutput<Audio::WAV>::convert<int16_t>(std::vector<uint8_t> &out,
+ const AudioBuffer<int16_t> &buffer, const AudioCue &start, const AudioCue &end);
 
 #endif /* AUDIOOUTPUT_HPP */

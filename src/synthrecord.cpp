@@ -27,7 +27,8 @@
 #include <inttypes.h>
 #include <typeinfo>
 
-/* FIXME: schedule audio recording, noise profile events. */
+#define OUTPUT_DIR "output"
+
 static size_t schedule_events(EventSchedule &ev,
  const std::shared_ptr<GlobalConfig> &cfg,
  const std::shared_ptr<PlaybackConfig> &play,
@@ -288,6 +289,16 @@ int main(int argc, char **argv)
       fprintf(stderr, "%10" PRIu64 " : cue %s\n", c.frame,
        AudioCue::type_str(c.type));
 
+    if(!Platform::mkdir_recursive("output"))
+    {
+      fprintf(stderr, "failed to create output directory\n");
+      return 0;
+    }
+
+    /* Output audio (debug, no processing) */
+    if(cfg->output_debug)
+      AudioOutput<Audio::RAW>::write(buffer, OUTPUT_DIR "/pre.raw");
+
     // FIXME: amplify and noise removal
 
     /* Remove silence from individual samples. */
@@ -299,7 +310,11 @@ int main(int argc, char **argv)
 
     /* Output audio */
     if(cfg->output_debug)
-      AudioOutput<Audio::RAW>::write(buffer, "out.raw");
+      AudioOutput<Audio::RAW>::write(buffer, OUTPUT_DIR "/post.raw");
+
+    if(cfg->output_wav)
+      AudioOutput<Audio::WAV>::write_all(buffer, play->MinNote,
+       OUTPUT_DIR "/%.wav");
 
     // FIXME: output audio
   }

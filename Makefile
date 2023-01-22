@@ -31,6 +31,7 @@ midi_objs := \
 output_objs := \
 	${obj}/AudioOutput.o \
 	${obj}/AudioOutput_Raw.o \
+	${obj}/AudioOutput_WAV.o \
 
 soundcard_objs := \
 	${obj}/Soundcard_ALSA.o \

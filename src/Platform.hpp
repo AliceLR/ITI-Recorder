@@ -28,6 +28,8 @@ static inline constexpr T cast_multiply(T a, T b)
 class Platform
 {
 public:
+  static bool mkdir_recursive(char *path);
+  static bool mkdir_recursive(const char *path);
   static void delay(unsigned ms);
   static void wait_input();
 };
