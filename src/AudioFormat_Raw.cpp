@@ -16,36 +16,17 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "AudioOutput.hpp"
+#include "AudioFormat.hpp"
 
-#include <stdio.h>
 
-bool AudioOutputCommon::write_file(const std::vector<uint8_t> &out,
- const char *filename)
+static class _AudioOutputRaw : public AudioFormat
 {
-  FILE *fp = fopen(filename, "wb");
-  if(fp)
+  virtual bool save(const AudioBuffer<int16_t> &buffer,
+   const AudioCue &start, const AudioCue &end, const char *filename) const
   {
-    if(fwrite(out.data(), 1, out.size(), fp) < out.size())
-      fprintf(stderr, "error writing file '%s'\n", filename);
-
-    fclose(fp);
-    return true;
+    size_t sz = buffer.total_frames() * buffer.frame_size();
+    return write_file(buffer.get_samples().data(), sz, filename);
   }
-  return false;
-}
+} raw;
 
-bool AudioOutputCommon::write_file(const void *out, size_t out_len,
- const char *filename)
-{
-  FILE *fp = fopen(filename, "wb");
-  if(fp)
-  {
-    if(fwrite(out, 1, out_len, fp) < out_len)
-      fprintf(stderr, "error writing file '%s'\n", filename);
-
-    fclose(fp);
-    return true;
-  }
-  return false;
-}
+const AudioFormat &AudioFormatRaw = raw;

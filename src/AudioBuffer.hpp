@@ -31,8 +31,8 @@ struct AudioCue
 {
   enum Type
   {
-    On,
-    Off,
+    NoteOn,
+    NoteOff,
     NoiseStart,
     NoiseEnd
   };
@@ -44,8 +44,8 @@ struct AudioCue
   {
     switch(t)
     {
-    case On: return "On";
-    case Off: return "Off";
+    case NoteOn: return "NoteOn";
+    case NoteOff: return "NoteOff";
     case NoiseStart: return "NoiseStart";
     case NoiseEnd: return "NoiseEnd";
     }
@@ -126,7 +126,7 @@ public:
       if(pos > samples.size())
         continue;
 
-      if(cues[i].type == AudioCue::On)
+      if(cues[i].type == AudioCue::NoteOn)
       {
         size_t bound = frame;
         if(i + 1 < cues.size())
@@ -142,7 +142,7 @@ public:
       }
       else
 
-      if(cues[i].type == AudioCue::Off)
+      if(cues[i].type == AudioCue::NoteOff)
       {
         size_t bound = 0;
         if(i > 0)

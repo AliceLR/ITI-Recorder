@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "AudioOutput.hpp"
+#include "AudioFormat.hpp"
 
 class Chunk
 {
@@ -124,34 +124,51 @@ void Chunk::insert(int32_t v)
 }
 
 
-template<> template<>
-bool AudioOutput<Audio::WAV>::convert<int16_t>(std::vector<uint8_t> &out,
- const AudioBuffer<int16_t> &buffer, const AudioCue &start, const AudioCue &end)
+static class _AudioFormatWAVE : public AudioFormat
 {
-  Chunk riff('R','I','F','F');
-  riff.insert('W','A','V','E');
+  template<class T>
+  bool _convert(std::vector<uint8_t> &out, const AudioBuffer<T> &buffer,
+   const AudioCue &start, const AudioCue &end) const
+  {
+    Chunk riff('R','I','F','F');
+    riff.insert('W','A','V','E');
 
-  Chunk fmt_('f','m','t',' ');
-  riff.insert(fmt_);
-  fmt_.insert<int16_t>(1);
-  fmt_.insert<uint16_t>(buffer.channels);
-  fmt_.insert<uint32_t>(buffer.rate);
-  fmt_.insert<uint32_t>(buffer.rate * buffer.channels * sizeof(int16_t));
-  fmt_.insert<uint16_t>(buffer.channels * sizeof(int16_t));
-  fmt_.insert<uint16_t>(8 * sizeof(int16_t));
+    Chunk fmt_('f','m','t',' ');
+    riff.insert(fmt_);
+    fmt_.insert<int16_t>(1);
+    fmt_.insert<uint16_t>(buffer.channels);
+    fmt_.insert<uint32_t>(buffer.rate);
+    fmt_.insert<uint32_t>(buffer.rate * buffer.channels * sizeof(T));
+    fmt_.insert<uint16_t>(buffer.channels * sizeof(T));
+    fmt_.insert<uint16_t>(8 * sizeof(T));
 
-  Chunk data('d','a','t','a');
-  riff.insert(data);
+    Chunk data('d','a','t','a');
+    riff.insert(data);
 
-  const std::vector<int16_t> &smp = buffer.get_samples();
-  size_t pos = start.frame * buffer.channels;
-  size_t stop = end.frame * buffer.channels;
+    const std::vector<T> &smp = buffer.get_samples();
+    size_t pos = start.frame * buffer.channels;
+    size_t stop = end.frame * buffer.channels;
 
-  data.reserve((stop - pos) * sizeof(int16_t));
-  for(; pos < stop; pos++)
-    data.insert(smp[pos]);
+    data.reserve((stop - pos) * sizeof(T));
+    for(; pos < stop; pos++)
+      data.insert(smp[pos]);
 
-  out.reserve(riff.length() + 8);
-  riff.flush(out);
-  return true;
-}
+    out.reserve(riff.length() + 8);
+    riff.flush(out);
+    return true;
+  }
+
+  virtual bool convert(std::vector<uint8_t> &out, const AudioBuffer<int16_t> &buffer,
+   const AudioCue &start, const AudioCue &end) const
+  {
+    return _convert(out, buffer, start, end);
+  }
+
+  virtual bool convert(std::vector<uint8_t> &out, const AudioBuffer<int32_t> &buffer,
+   const AudioCue &start, const AudioCue &end) const
+  {
+    return _convert(out, buffer, start, end);
+  }
+} wave;
+
+const AudioFormat &AudioFormatWAVE = wave;

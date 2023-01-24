@@ -29,9 +29,9 @@ midi_objs := \
 	${obj}/Soundcard.o \
 
 output_objs := \
-	${obj}/AudioOutput.o \
-	${obj}/AudioOutput_Raw.o \
-	${obj}/AudioOutput_WAV.o \
+	${obj}/AudioFormat.o \
+	${obj}/AudioFormat_Raw.o \
+	${obj}/AudioFormat_WAVE.o \
 
 soundcard_objs := \
 	${obj}/Soundcard_ALSA.o \
