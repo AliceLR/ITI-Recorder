@@ -30,6 +30,7 @@ midi_objs := \
 
 output_objs := \
 	${obj}/AudioFormat.o \
+	${obj}/AudioFormat_ITI.o \
 	${obj}/AudioFormat_Raw.o \
 	${obj}/AudioFormat_WAVE.o \
 

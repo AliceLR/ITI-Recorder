@@ -19,10 +19,11 @@
 #include "AudioFormat.hpp"
 
 
-static class _AudioOutputRaw : public AudioFormat
+static const class _AudioOutputRaw : public AudioFormat
 {
-  virtual bool save(const AudioBuffer<int16_t> &buffer,
-   const AudioCue &start, const AudioCue &end, const char *filename) const
+  bool save(ConfigContext &ctx,
+   const AudioBuffer<int16_t> &buffer, const AudioCue &start, const AudioCue &end,
+   const char *filename) const override
   {
     size_t sz = buffer.total_frames() * buffer.frame_size();
     return write_file(buffer.get_samples().data(), sz, filename);

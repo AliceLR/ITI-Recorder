@@ -50,14 +50,23 @@ bool AudioFormat::write_file(const void *out, size_t out_len,
   return false;
 }
 
-bool AudioFormat::convert(std::vector<uint8_t> &out,
- const AudioBuffer<int16_t> &buffer, const AudioCue &start, const AudioCue &end) const
+bool AudioFormat::convert(ConfigContext &ctx,
+ std::vector<uint8_t> &out, const AudioBuffer<uint8_t> &buffer,
+ const AudioCue &start, const AudioCue &end) const
 {
   return false;
 }
 
-bool AudioFormat::convert(std::vector<uint8_t> &out,
- const AudioBuffer<int32_t> &buffer, const AudioCue &start, const AudioCue &end) const
+bool AudioFormat::convert(ConfigContext &ctx,
+ std::vector<uint8_t> &out, const AudioBuffer<int16_t> &buffer,
+ const AudioCue &start, const AudioCue &end) const
+{
+  return false;
+}
+
+bool AudioFormat::convert(ConfigContext &ctx,
+ std::vector<uint8_t> &out, const AudioBuffer<int32_t> &buffer,
+ const AudioCue &start, const AudioCue &end) const
 {
   return false;
 }

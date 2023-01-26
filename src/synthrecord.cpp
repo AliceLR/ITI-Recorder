@@ -62,7 +62,7 @@ static size_t schedule_events(EventSchedule &ev,
       /* On cue */
       if(add_cues)
       {
-        AudioCueEvent::schedule(ev, buffer, AudioCue::NoteOn, time_ms);
+        AudioCueEvent::schedule(ev, buffer, AudioCue::NoteOn, i, time_ms);
         cues++;
       }
 
@@ -93,7 +93,7 @@ static size_t schedule_events(EventSchedule &ev,
       /* Off cue */
       if(add_cues)
       {
-        AudioCueEvent::schedule(ev, buffer, AudioCue::NoteOff, time_ms - 10);
+        AudioCueEvent::schedule(ev, buffer, AudioCue::NoteOff, i, time_ms - 10);
         cues++;
       }
     }
@@ -297,7 +297,9 @@ int main(int argc, char **argv)
 
     /* Output audio (debug, no processing) */
     if(cfg->output_debug)
-      AudioFormatRaw.save(buffer, OUTPUT_DIR "/pre.raw");
+      AudioFormatRaw.save(ctx, buffer, OUTPUT_DIR "/pre.raw");
+
+    // FIXME: remove redundant channels
 
     // FIXME: amplify and noise removal
 
@@ -310,10 +312,13 @@ int main(int argc, char **argv)
 
     /* Output audio */
     if(cfg->output_debug)
-      AudioFormatRaw.save(buffer, OUTPUT_DIR "/post.raw");
+      AudioFormatRaw.save(ctx, buffer, OUTPUT_DIR "/post.raw");
 
     if(cfg->output_wav)
-      AudioFormatWAVE.save_all(buffer, play->MinNote, OUTPUT_DIR "/%.wav");
+      AudioFormatWAVE.save_all(ctx, buffer, OUTPUT_DIR "/%.wav");
+
+    if(cfg->output_iti)
+      AudioFormatITI.save(ctx, buffer, OUTPUT_DIR "/out.iti");
 
     // FIXME: output audio
   }

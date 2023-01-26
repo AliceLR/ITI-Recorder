@@ -63,6 +63,7 @@ class MIDIInterface : public ConfigInterface
 
 public:
   static constexpr unsigned A1 = 33;
+  static constexpr unsigned C4 = 60;
   static constexpr unsigned C7 = 96;
 
   Option<unsigned>  device;
@@ -175,7 +176,7 @@ public:
    Quiet_ms(options, 100, 10, UINT_MAX, "Quiet_ms"),
    OnVelocity(options, 127, 0, 127, "OnVelocity"),
    OffVelocity(options, 64, 0, 127, "OffVelocity"),
-   MinNote(options, "C1", "C-1", "G9", 0, "MinNote"),
+   MinNote(options, "C2", "C-1", "G9", 0, "MinNote"),
    MaxNote(options, "C7", "C-1", "G9", 0, "MaxNote")
   {}
 

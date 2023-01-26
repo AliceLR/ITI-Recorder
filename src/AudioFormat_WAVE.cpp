@@ -124,7 +124,7 @@ void Chunk::insert(int32_t v)
 }
 
 
-static class _AudioFormatWAVE : public AudioFormat
+static const class _AudioFormatWAVE : public AudioFormat
 {
   template<class T>
   bool _convert(std::vector<uint8_t> &out, const AudioBuffer<T> &buffer,
@@ -158,14 +158,23 @@ static class _AudioFormatWAVE : public AudioFormat
     return true;
   }
 
-  virtual bool convert(std::vector<uint8_t> &out, const AudioBuffer<int16_t> &buffer,
-   const AudioCue &start, const AudioCue &end) const
+  virtual bool convert(ConfigContext &ctx,
+   std::vector<uint8_t> &out, const AudioBuffer<uint8_t> &buffer,
+   const AudioCue &start, const AudioCue &end) const override
   {
     return _convert(out, buffer, start, end);
   }
 
-  virtual bool convert(std::vector<uint8_t> &out, const AudioBuffer<int32_t> &buffer,
-   const AudioCue &start, const AudioCue &end) const
+  virtual bool convert(ConfigContext &ctx,
+   std::vector<uint8_t> &out, const AudioBuffer<int16_t> &buffer,
+   const AudioCue &start, const AudioCue &end) const override
+  {
+    return _convert(out, buffer, start, end);
+  }
+
+  virtual bool convert(ConfigContext &ctx,
+   std::vector<uint8_t> &out, const AudioBuffer<int32_t> &buffer,
+   const AudioCue &start, const AudioCue &end) const override
   {
     return _convert(out, buffer, start, end);
   }

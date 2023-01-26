@@ -39,6 +39,7 @@ struct AudioCue
 
   size_t frame;
   Type type;
+  int value;
 
   static constexpr const char *type_str(Type t)
   {
@@ -164,9 +165,9 @@ public:
     cues.reserve(n);
   }
 
-  void cue(AudioCue::Type type)
+  void cue(AudioCue::Type type, int value)
   {
-    cues.push_back({ frame, type });
+    cues.push_back({ frame, type, value });
   }
 
   size_t frame_size() const
@@ -188,6 +189,11 @@ public:
   {
     return cues;
   }
+
+  const T &operator[](size_t idx) const
+  {
+    return samples[idx];
+  }
 };
 
 
@@ -198,15 +204,22 @@ class AudioCueEvent
   {
     AudioBuffer<T> &buffer;
     AudioCue::Type type;
+    int value;
+    bool has_value;
 
   public:
     _AudioCueEvent(AudioBuffer<T> &_buffer, AudioCue::Type _type, int _time_ms):
-    Event(_time_ms), buffer(_buffer), type(_type) {}
+    Event(_time_ms), buffer(_buffer), type(_type), value(0), has_value(false) {}
+    _AudioCueEvent(AudioBuffer<T> &_buffer, AudioCue::Type _type, int _value, int _time_ms):
+    Event(_time_ms), buffer(_buffer), type(_type), value(_value), has_value(true) {}
 
     virtual void task() const
     {
-      fprintf(stderr, "cue: %s\n", AudioCue::type_str(type));
-      buffer.cue(type);
+      if(has_value)
+        fprintf(stderr, "cue: %s = %d\n", AudioCue::type_str(type), value);
+      else
+        fprintf(stderr, "cue: %s\n", AudioCue::type_str(type));
+      buffer.cue(type, value);
     }
   };
 
@@ -216,6 +229,13 @@ public:
    AudioCue::Type _type, int _time_ms)
   {
     ev.push(std::make_shared<_AudioCueEvent<T>>(_buffer, _type, _time_ms));
+  }
+
+  template<class T>
+  static void schedule(EventSchedule &ev, AudioBuffer<T> &_buffer,
+   AudioCue::Type _type, int _val, int _time_ms)
+  {
+    ev.push(std::make_shared<_AudioCueEvent<T>>(_buffer, _type, _val, _time_ms));
   }
 };
 
