@@ -21,6 +21,34 @@
 
 #include "stdio.h"
 
+class ITIConfig : public ConfigInterface
+{
+public:
+  OptionString<25>  Name;
+  Option<unsigned>  MaxHalfSteps;
+
+  ITIConfig(ConfigContext &_ctx, const char *_tag, int _id):
+   ConfigInterface(_ctx, _tag, _id),
+   Name(options, "<default>", "Name"),
+   MaxHalfSteps(options, 3, 0, 120, "MaxHalfSteps")
+  {}
+
+  virtual ~ITIConfig() {}
+};
+
+class ITIConfigRegister : public ConfigRegister
+{
+public:
+  ITIConfigRegister(const char *_tag): ConfigRegister(_tag) {}
+
+  std::shared_ptr<ConfigInterface> generate(ConfigContext &ctx,
+   const char *tag, int id) const
+  {
+    return std::shared_ptr<ConfigInterface>(new ITIConfig(ctx, tag, id));
+  }
+} reg_iti("ITI");
+
+
 /* Sample conversion functions. */
 static void cvt(std::vector<uint8_t> &out, uint8_t d)
 {
@@ -70,9 +98,15 @@ static const class AudioFormatITI : public AudioFormat
   void write_impi(std::vector<uint8_t> &out, std::vector<Note> &notes,
    ConfigContext &ctx) const
   {
+    const auto iti = ctx.get_interface_as<ITIConfig>("ITI");
+    if(!iti)
+      return;
+
     uint8_t keymap[240]{};
     char dosname[12]{};
-    char insname[26]{}; /* FIXME: configuration */
+    char insname[26]{};
+
+    snprintf(insname, sizeof(insname), "%s", iti->Name.value());
 
     /* Build initial keymap from notes with existing samples. */
     for(size_t i = 0; i < notes.size(); i++)
@@ -85,7 +119,32 @@ static const class AudioFormatITI : public AudioFormat
         keymap[idx + 1] = i + 1;
       }
     }
-    /* FIXME: need to fill in extra adjacent keys in keymap, configurable */
+
+    /* Fill in unmapped keys by transposing up/down to the half steps limit. */
+    for(size_t i = 0; i < iti->MaxHalfSteps; i++)
+    {
+      for(size_t j = 0; j < 240; j += 2)
+      {
+        if(keymap[j + 1] == 0)
+        {
+          unsigned prev = (j > 0) ? keymap[j - 2 + 1] : 0;
+          unsigned next = (j < 238) ? keymap[j + 2 + 1] : 0;
+          if(prev)
+          {
+            keymap[j + 0] = std::min(119, keymap[j - 2] + 1);
+            keymap[j + 1] = keymap[j - 1];
+            j += 2; // Skip next gap
+          }
+          else
+
+          if(next)
+          {
+            keymap[j + 0] = std::max(0, keymap[j + 2] - 1);
+            keymap[j + 1] = keymap[j + 3];
+          }
+        }
+      }
+    }
 
     uint8_t buf[IMPI_LENGTH]{};
     Buffer<IMPI_LENGTH> tmp = Buffer<IMPI_LENGTH>(buf)
@@ -133,20 +192,24 @@ static const class AudioFormatITI : public AudioFormat
   void write_imps(std::vector<uint8_t> &out, Note &note,
    ConfigContext &ctx, const AudioBuffer<T> &buffer) const
   {
-    char dosname[12]{};
-    char smpname[26]{}; /* FIXME: configuration */
-    unsigned flags = 0;
+    const auto cfg = ctx.get_interface_as<GlobalConfig>("Global");
+    const auto iti = ctx.get_interface_as<ITIConfig>("ITI");
+    if(!cfg || !iti)
+      return;
 
+    char dosname[12]{};
+    char smpname[26]{};
+    unsigned flags = (1 << 0);                /* sample is set */
+
+    snprintf(smpname, sizeof(smpname), "%s", iti->Name.value());
     snprintf(dosname, sizeof(dosname), "%s",
      MIDIInterface::get_note(note.note));
 
     if(sizeof(T) >= 2)
-      flags |= (1 << 0);                      /* 16-bit */
+      flags |= (1 << 1);                      /* 16-bit */
     if(buffer.channels >= 2)
-      flags |= (1 << 1);                      /* stereo */
+      flags |= (1 << 2);                      /* stereo */
     /* TODO: compression (configurable) */
-
-    const auto cfg = ctx.get_interface_as<GlobalConfig>("Global");
 
     uint8_t buf[IMPS_LENGTH];
     Buffer<IMPS_LENGTH> tmp = Buffer<IMPS_LENGTH>(buf)
